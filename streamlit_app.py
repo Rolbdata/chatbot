@@ -65,82 +65,70 @@
 #         st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
 
-
 import streamlit as st
 from openai import OpenAI
-import tiktoken  # Per contare i token
+import tiktoken
 
-# Funzione per contare i token di un testo (aiuta a mantenere il limite massimo)
+# Imposta la tua API key (occhio a non condividerla pubblicamente!)
+OPENAI_API_KEY = "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"  # Sostituisci con la tua vera API Key
+
+# Carica le informazioni dal file
+def load_personal_info(file_path="informazioni_rolando.txt"):
+    with open(file_path, "r", encoding="utf-8") as file:
+        return file.read()
+
+# Conta i token di un testo
 def count_tokens(text, model="gpt-4-turbo"):
     encoding = tiktoken.encoding_for_model(model)
     return len(encoding.encode(text))
 
-# Carica le informazioni dal file .txt
-def load_personal_info(file_path="informazioni_rolando.txt"):
-    with open(file_path, "r", encoding="utf-8") as file:
-        info = file.read()
-    return info
+# Inizializza elementi nella sessione
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "questions_asked" not in st.session_state:
+    st.session_state.questions_asked = 0
 
-# Mostra il titolo
+# Carica info e client
+personal_info = load_personal_info()
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Titolo
 st.title("Chatbot di Rolando")
+st.markdown("🤖 Puoi fare **fino a 3 domande** riguardo **Rolando**.")
 
-# Input per la chiave API
-openai_api_key = st.text_input("OpenAI API Key", type="password")
+# Mostra chat precedente
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-if not openai_api_key:
-    st.info("Inserisci la tua API Key di OpenAI per continuare.", icon="ℹ️")
+# Input utente
+if st.session_state.questions_asked >= 3:
+    st.warning("Hai raggiunto il limite massimo di 3 domande. Grazie per aver usato il chatbot!", icon="⚠️")
 else:
-    # Crea un client OpenAI
-    client = OpenAI(api_key=openai_api_key)
-
-    # Carica le informazioni personali dal file
-    personal_info = load_personal_info()
-
-    # Inizializza la cronologia della chat se non esiste
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    # Visualizza i messaggi precedenti
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    # Input dell'utente
-    if prompt := st.chat_input("Fai una domanda su Rolando o altro..."):
-        # Aggiungi il messaggio dell'utente alla cronologia
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        # Crea il contesto per OpenAI
-        context = (
-            "Le seguenti informazioni sono su Rolando. Usa queste informazioni per rispondere alle domande. "
-            "Se la domanda non riguarda Rolando, rispondi normalmente. \n\n"
-            f"{personal_info}\n\n"
-            "Domanda: " + prompt
-        )
-
-        # Assicuriamoci di non superare il limite di token
-        max_tokens = 50000  # Manteniamo un buffer per la risposta
-        token_count = count_tokens(context)
-
-        if token_count > max_tokens:
-            st.error("Il contesto è troppo lungo. Riduci la dimensione del file di testo.")
+    if prompt := st.chat_input("Fai una domanda su Rolando..."):
+        if "rolando" not in prompt.lower():
+            st.error("Puoi fare solo domande relative a **Rolando**.")
         else:
-            # Limitiamo il numero di messaggi salvati per evitare errori di token
-            while count_tokens(str(st.session_state.messages)) > 120000:
-                st.session_state.messages.pop(0)  # Rimuove i messaggi più vecchi
+            st.session_state.questions_asked += 1
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-            # Genera la risposta
-            response = client.chat.completions.create(
-                model="gpt-4-turbo",
-                messages=[{"role": "system", "content": context}]
+            context = (
+                "Le seguenti informazioni sono su Rolando. Usa SOLO queste informazioni per rispondere. "
+                "Se non puoi rispondere basandoti su di esse, rispondi 'Non lo so'.\n\n"
+                f"{personal_info}\n\n"
+                f"Domanda: {prompt}"
             )
 
-            # Otteniamo la risposta e la mostriamo
-            assistant_response = response.choices[0].message.content
-            with st.chat_message("assistant"):
-                st.markdown(assistant_response)
-
-            # Salviamo il messaggio dell'assistente
-            st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+            if count_tokens(context) > 50000:
+                st.error("Il contesto è troppo lungo. Riduci la dimensione del file.")
+            else:
+                response = client.chat.completions.create(
+                    model="gpt-4-turbo",
+                    messages=[{"role": "system", "content": context}]
+                )
+                assistant_response = response.choices[0].message.content
+                with st.chat_message("assistant"):
+                    st.markdown(assistant_response)
+                st.session_state.messages.append({"role": "assistant", "content": assistant_response})
