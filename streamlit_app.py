@@ -65,6 +65,87 @@
 #         st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
 
+
+# import streamlit as st
+# from openai import OpenAI
+# import tiktoken  # Per contare i token
+
+# # Funzione per contare i token di un testo (aiuta a mantenere il limite massimo)
+# def count_tokens(text, model="gpt-4-turbo"):
+#     encoding = tiktoken.encoding_for_model(model)
+#     return len(encoding.encode(text))
+
+# # Carica le informazioni dal file .txt
+# def load_personal_info(file_path="informazioni_rolando.txt"):
+#     with open(file_path, "r", encoding="utf-8") as file:
+#         info = file.read()
+#     return info
+
+# # Mostra il titolo
+# st.title("Chatbot di Rolando")
+
+# # Input per la chiave API
+# openai_api_key = st.text_input("OpenAI API Key", type="password")
+
+# if not openai_api_key:
+#     st.info("Inserisci la tua API Key di OpenAI per continuare.", icon="ℹ️")
+# else:
+#     # Crea un client OpenAI
+#     client = OpenAI(api_key=openai_api_key)
+
+#     # Carica le informazioni personali dal file
+#     personal_info = load_personal_info()
+
+#     # Inizializza la cronologia della chat se non esiste
+#     if "messages" not in st.session_state:
+#         st.session_state.messages = []
+
+#     # Visualizza i messaggi precedenti
+#     for message in st.session_state.messages:
+#         with st.chat_message(message["role"]):
+#             st.markdown(message["content"])
+
+#     # Input dell'utente
+#     if prompt := st.chat_input("Fai una domanda su Rolando o altro..."):
+#         # Aggiungi il messaggio dell'utente alla cronologia
+#         st.session_state.messages.append({"role": "user", "content": prompt})
+#         with st.chat_message("user"):
+#             st.markdown(prompt)
+
+#         # Crea il contesto per OpenAI
+#         context = (
+#             "Le seguenti informazioni sono su Rolando. Usa queste informazioni per rispondere alle domande. "
+#             "Se la domanda non riguarda Rolando, rispondi normalmente. \n\n"
+#             f"{personal_info}\n\n"
+#             "Domanda: " + prompt
+#         )
+
+#         # Assicuriamoci di non superare il limite di token
+#         max_tokens = 50000  # Manteniamo un buffer per la risposta
+#         token_count = count_tokens(context)
+
+#         if token_count > max_tokens:
+#             st.error("Il contesto è troppo lungo. Riduci la dimensione del file di testo.")
+#         else:
+#             # Limitiamo il numero di messaggi salvati per evitare errori di token
+#             while count_tokens(str(st.session_state.messages)) > 120000:
+#                 st.session_state.messages.pop(0)  # Rimuove i messaggi più vecchi
+
+#             # Genera la risposta
+#             response = client.chat.completions.create(
+#                 model="gpt-4-turbo",
+#                 messages=[{"role": "system", "content": context}]
+#             )
+
+#             # Otteniamo la risposta e la mostriamo
+#             assistant_response = response.choices[0].message.content
+#             with st.chat_message("assistant"):
+#                 st.markdown(assistant_response)
+
+#             # Salviamo il messaggio dell'assistente
+#             st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+
 import streamlit as st
 from openai import OpenAI
 import tiktoken
