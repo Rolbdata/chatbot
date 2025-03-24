@@ -1,56 +1,215 @@
+# import streamlit as st
+# from openai import OpenAI
+
+
+# # Carica le informazioni dal file .txt
+# def load_personal_info(file_path="/workspaces/chatbot/informazioni_rolando.txt"):
+#     with open(file_path, "r") as file:
+#         info = file.read()
+#     return info
+
+
+# # Mostra il titolo e la descrizione
+# st.title("Chatbot")
+# st.write(
+#     "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
+#     "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
+#     "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
+# )
+
+# # Chiedi all'utente la chiave API di OpenAI
+# openai_api_key = st.text_input("OpenAI API Key", type="password")
+# if not openai_api_key:
+#     st.info("Please add your OpenAI API key to continue.", icon="ℹ️")
+# else:
+#     # Crea un client OpenAI
+#     client = OpenAI(api_key=openai_api_key)
+    
+#     # Carica le informazioni personali dal file
+#     personal_info = load_personal_info()
+    
+#     # Crea una variabile di stato della sessione per memorizzare i messaggi della chat
+#     if "messages" not in st.session_state:
+#         st.session_state.messages = []
+    
+#     # Visualizza i messaggi della chat esistenti
+#     for message in st.session_state.messages:
+#         with st.chat_message(message["role"]):
+#             st.markdown(message["content"])
+    
+#     # Crea un campo di input per permettere all'utente di immettere un messaggio
+#     if prompt := st.chat_input("What is up?"):
+#         # Memorizza e visualizza il prompt corrente
+#         st.session_state.messages.append({"role": "user", "content": prompt})
+#         with st.chat_message("user"):
+#             st.markdown(prompt)
+        
+#         # Se l'utente chiede informazioni su Rolando, fornisci le informazioni dal file
+#         if "rolando" in prompt.lower():
+#             assistant_response = f"Here is the information about Rolando: \n\n{personal_info}"
+#         else:
+#             # Genera una risposta utilizzando l'API di OpenAI
+#             stream = client.chat.completions.create(
+#                 model="gpt-3.5-turbo",
+#                 messages=[
+#                     {"role": m["role"], "content": m["content"]}
+#                     for m in st.session_state.messages
+#                 ],
+#                 stream=True,
+#             )
+#             # Stream la risposta alla chat
+#             with st.chat_message("assistant"):
+#                 assistant_response = st.write_stream(stream)
+        
+#         # Memorizza e visualizza la risposta dell'assistente
+#         st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+
+
+# import streamlit as st
+# from openai import OpenAI
+# import tiktoken  # Per contare i token
+
+# # Funzione per contare i token di un testo (aiuta a mantenere il limite massimo)
+# def count_tokens(text, model="gpt-4-turbo"):
+#     encoding = tiktoken.encoding_for_model(model)
+#     return len(encoding.encode(text))
+
+# # Carica le informazioni dal file .txt
+# def load_personal_info(file_path="informazioni_rolando.txt"):
+#     with open(file_path, "r", encoding="utf-8") as file:
+#         info = file.read()
+#     return info
+
+# # Mostra il titolo
+# st.title("Chatbot di Rolando")
+
+# # Input per la chiave API
+# openai_api_key = st.text_input("OpenAI API Key", type="password")
+
+# if not openai_api_key:
+#     st.info("Inserisci la tua API Key di OpenAI per continuare.", icon="ℹ️")
+# else:
+#     # Crea un client OpenAI
+#     client = OpenAI(api_key=openai_api_key)
+
+#     # Carica le informazioni personali dal file
+#     personal_info = load_personal_info()
+
+#     # Inizializza la cronologia della chat se non esiste
+#     if "messages" not in st.session_state:
+#         st.session_state.messages = []
+
+#     # Visualizza i messaggi precedenti
+#     for message in st.session_state.messages:
+#         with st.chat_message(message["role"]):
+#             st.markdown(message["content"])
+
+#     # Input dell'utente
+#     if prompt := st.chat_input("Fai una domanda su Rolando o altro..."):
+#         # Aggiungi il messaggio dell'utente alla cronologia
+#         st.session_state.messages.append({"role": "user", "content": prompt})
+#         with st.chat_message("user"):
+#             st.markdown(prompt)
+
+#         # Crea il contesto per OpenAI
+#         context = (
+#             "Le seguenti informazioni sono su Rolando. Usa queste informazioni per rispondere alle domande. "
+#             "Se la domanda non riguarda Rolando, rispondi normalmente. \n\n"
+#             f"{personal_info}\n\n"
+#             "Domanda: " + prompt
+#         )
+
+#         # Assicuriamoci di non superare il limite di token
+#         max_tokens = 50000  # Manteniamo un buffer per la risposta
+#         token_count = count_tokens(context)
+
+#         if token_count > max_tokens:
+#             st.error("Il contesto è troppo lungo. Riduci la dimensione del file di testo.")
+#         else:
+#             # Limitiamo il numero di messaggi salvati per evitare errori di token
+#             while count_tokens(str(st.session_state.messages)) > 120000:
+#                 st.session_state.messages.pop(0)  # Rimuove i messaggi più vecchi
+
+#             # Genera la risposta
+#             response = client.chat.completions.create(
+#                 model="gpt-4-turbo",
+#                 messages=[{"role": "system", "content": context}]
+#             )
+
+#             # Otteniamo la risposta e la mostriamo
+#             assistant_response = response.choices[0].message.content
+#             with st.chat_message("assistant"):
+#                 st.markdown(assistant_response)
+
+#             # Salviamo il messaggio dell'assistente
+#             st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+
 import streamlit as st
 from openai import OpenAI
+import tiktoken
 
-# Show title and description.
-st.title("💬 Chatbot")
-st.write(
-    "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-    "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
-)
+# Imposta la tua API key (occhio a non condividerla pubblicamente!)
+OPENAI_API_KEY = "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"  # Sostituisci con la tua vera API Key
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
+# Carica le informazioni dal file
+def load_personal_info(file_path="informazioni_rolando.txt"):
+    with open(file_path, "r", encoding="utf-8") as file:
+        return file.read()
+
+# Conta i token di un testo
+def count_tokens(text, model="gpt-4-turbo"):
+    encoding = tiktoken.encoding_for_model(model)
+    return len(encoding.encode(text))
+
+# Inizializza elementi nella sessione
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "questions_asked" not in st.session_state:
+    st.session_state.questions_asked = 0
+
+# Carica info e client
+personal_info = load_personal_info()
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Titolo
+st.title("Chatbot di Rolando")
+st.markdown("🤖 Puoi fare **fino a 3 domande** riguardo **Rolando**.")
+
+# Mostra chat precedente
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Input utente
+if st.session_state.questions_asked >= 3:
+    st.warning("Hai raggiunto il limite massimo di 3 domande. Grazie per aver usato il chatbot!", icon="⚠️")
 else:
+    if prompt := st.chat_input("Fai una domanda su Rolando..."):
+        if "rolando" not in prompt.lower():
+            st.error("Puoi fare solo domande relative a **Rolando**.")
+        else:
+            st.session_state.questions_asked += 1
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+            context = (
+                "Le seguenti informazioni sono su Rolando. Usa SOLO queste informazioni per rispondere. "
+                "Se non puoi rispondere basandoti su di esse, rispondi 'Non lo so'.\n\n"
+                f"{personal_info}\n\n"
+                f"Domanda: {prompt}"
+            )
 
-    # Create a session state variable to store the chat messages. This ensures that the
-    # messages persist across reruns.
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    # Display the existing chat messages via `st.chat_message`.
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    # Create a chat input field to allow the user to enter a message. This will display
-    # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
-
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        # Generate a response using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
-
-        # Stream the response to the chat using `st.write_stream`, then store it in 
-        # session state.
-        with st.chat_message("assistant"):
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            if count_tokens(context) > 50000:
+                st.error("Il contesto è troppo lungo. Riduci la dimensione del file.")
+            else:
+                response = client.chat.completions.create(
+                    model="gpt-4-turbo",
+                    messages=[{"role": "system", "content": context}]
+                )
+                assistant_response = response.choices[0].message.content
+                with st.chat_message("assistant"):
+                    st.markdown(assistant_response)
+                st.session_state.messages.append({"role": "assistant", "content": assistant_response})
