@@ -151,7 +151,7 @@ from openai import OpenAI
 import tiktoken
 
 # Imposta la tua API key (occhio a non condividerla pubblicamente!)
-OPENAI_API_KEY = "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"  # Sostituisci con la tua vera API Key
+OPENAI_API_KEY = "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"  # Sostituisci con la tua vera API Key
 
 # Carica le informazioni dal file
 def load_personal_info(file_path="informazioni_rolando.txt"):
